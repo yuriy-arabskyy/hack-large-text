@@ -14,7 +14,11 @@ class EvidenceSelection(dspy.Signature):
 
 class AnswerSynthesis(dspy.Signature):
     """Compose final answer with inline citations and JSON anchors."""
-    question = dspy.InputField(desc="The user’s question")
-    evidence = dspy.InputField(desc="List of selected evidence snippets")
-    answer_text = dspy.OutputField(desc="Generated natural-language answer")
-    citations_json = dspy.OutputField(desc="List of anchors/citation metadata")
+    question = dspy.InputField(desc="The user's question")
+    evidence = dspy.InputField(desc="List of selected evidence snippets with page numbers and sections")
+    answer_text = dspy.OutputField(desc="Generated natural-language answer with inline citations")
+    citations_json = dspy.OutputField(
+        desc='List of citation objects in JSON format. Each citation must include: '
+        '"page" (integer page number), "section" (section path string), and "quote" (relevant text excerpt). '
+        'Example: [{"page": 12, "section": "Opening Strategy", "quote": "Control the center"}]'
+    )
