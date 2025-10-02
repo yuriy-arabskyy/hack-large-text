@@ -26,15 +26,15 @@ The process is split into two phases:
    - Detect headings → build section hierarchy / TOC.
    - Attach `section_path` to each block, table, figure.
 
-3. **Hash & ID**
-   - Assign IDs:  
-     - `doc_id`, `page_id`, `unit_id`
-   - Compute content hashes for change detection and versioning.
+3. **Assign IDs**
+   - `doc_id` (e.g., UUID or filename-based).  
+   - `page_id` = `(doc_id, page_no)`.  
+   - `unit_id` = `(doc_id, page_no, unit_index)` for each block/table/figure.  
 
 4. **Persist**
    - Store structured data in **DB**:
      - `pages`, `blocks`, `tables`, `figures`
-   - Store binary assets (crops, thumbnails) in FS/S3.
+   - Store binary assets (image crops, thumbnails) in FS/S3.
    - Create indices:
      - **Full-text** (BM25 / SQLite FTS5).
      - **Optional semantic index** (Qdrant, per modality).
@@ -120,22 +120,11 @@ While generating summaries or Q&A:
 
 ---
 
-### Incremental Updates
-
-- On new PDF version:
-  - Re-ingest only changed pages/units (by hash).
-  - Update DB + indices.
-  - Re-run summaries for affected sections only.
-- `diff_docs(old, new)` → human-readable “what changed” report.
-
----
-
 ## Example Timeline
 
 - **Day 0:** Ingest PDF → workspace created. (~2,000 text blocks, 120 tables, 90 figures)  
 - **Day 1:** Ask Q&A → Answer with citations `[p.46 §Warranty Terms]`.  
 - **Day 2:** Generate executive brief → one-page summary with clickable anchors.  
-- **Day 3:** New PDF version → detect 12 changed blocks → update only those.  
 
 ---
 
@@ -145,7 +134,6 @@ While generating summaries or Q&A:
 - **Q&A with citations**  
 - **Executive brief with JSON anchors**  
 - **Coverage report**  
-- **Diff report for updates**  
 
 ---
 
