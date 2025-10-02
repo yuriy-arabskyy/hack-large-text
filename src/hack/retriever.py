@@ -13,43 +13,62 @@ class FaissRetriever:
 
     def __init__(
         self,
-        faiss_index_path: str,
-        workspace_json_path: str,
+        faiss_index_path: Optional[str] = None,
+        workspace_json_path: Optional[str] = None,
+        faiss_index: Optional[faiss.Index] = None,
+        blocks: Optional[List[Dict]] = None,
         model_name: str = "all-MiniLM-L6-v2",
         k: int = 10
     ):
         """
         Initialize FAISS retriever.
 
+        Two modes:
+        1. File-based: Provide faiss_index_path and workspace_json_path
+        2. In-memory: Provide faiss_index and blocks directly
+
         Args:
-            faiss_index_path: Path to the FAISS index file
-            workspace_json_path: Path to workspace JSON with blocks and embeddings
+            faiss_index_path: Path to the FAISS index file (file-based mode)
+            workspace_json_path: Path to workspace JSON with blocks (file-based mode)
+            faiss_index: FAISS index object (in-memory mode)
+            blocks: List of blocks without embeddings (in-memory mode)
             model_name: Name of sentence-transformers model (must match embedding model)
             k: Default number of results to return
         """
         self.k = k
 
-        # Load FAISS index
-        index_path = Path(faiss_index_path)
-        if not index_path.exists():
-            raise FileNotFoundError(f"FAISS index not found at {faiss_index_path}")
-        self.index = faiss.read_index(str(index_path))
+        # Determine mode and load data
+        if faiss_index is not None and blocks is not None:
+            # In-memory mode
+            self.index = faiss_index
+            self.blocks = blocks
+        elif faiss_index_path is not None and workspace_json_path is not None:
+            # File-based mode
+            index_path = Path(faiss_index_path)
+            if not index_path.exists():
+                raise FileNotFoundError(f"FAISS index not found at {faiss_index_path}")
+            self.index = faiss.read_index(str(index_path))
 
-        # Load workspace data
-        workspace_path = Path(workspace_json_path)
-        if not workspace_path.exists():
-            raise FileNotFoundError(f"Workspace JSON not found at {workspace_json_path}")
+            # Load workspace data
+            workspace_path = Path(workspace_json_path)
+            if not workspace_path.exists():
+                raise FileNotFoundError(f"Workspace JSON not found at {workspace_json_path}")
 
-        with open(workspace_path, 'r') as f:
-            self.workspace_data = json.load(f)
+            with open(workspace_path, 'r') as f:
+                self.workspace_data = json.load(f)
 
-        # Extract blocks with valid embeddings
-        self.blocks = []
-        for block in self.workspace_data['blocks']:
-            if block.get('embedding') is not None:
-                # Store block without embedding to save memory
-                block_copy = {k: v for k, v in block.items() if k != 'embedding'}
-                self.blocks.append(block_copy)
+            # Extract blocks with valid embeddings
+            self.blocks = []
+            for block in self.workspace_data['blocks']:
+                if block.get('embedding') is not None:
+                    # Store block without embedding to save memory
+                    block_copy = {k: v for k, v in block.items() if k != 'embedding'}
+                    self.blocks.append(block_copy)
+        else:
+            raise ValueError(
+                "Must provide either (faiss_index + blocks) for in-memory mode "
+                "or (faiss_index_path + workspace_json_path) for file-based mode"
+            )
 
         # Load sentence transformer model
         self.model = SentenceTransformer(model_name)

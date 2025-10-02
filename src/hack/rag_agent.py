@@ -53,9 +53,21 @@ class WorkspaceAgent(dspy.Module):
 def create_agent(
     faiss_index_path: str = "experiments/chess_pdf.faiss",
     workspace_json_path: str = "experiments/workspace_with_embeddings.json",
+    retriever=None,
 ):
-    """Create a WorkspaceAgent with FaissRetriever."""
-    retriever = FaissRetriever(
-        faiss_index_path=faiss_index_path, workspace_json_path=workspace_json_path
-    )
+    """
+    Create a WorkspaceAgent with FaissRetriever.
+
+    Args:
+        faiss_index_path: Path to FAISS index file (file-based mode)
+        workspace_json_path: Path to workspace JSON (file-based mode)
+        retriever: Pre-initialized retriever (in-memory mode, overrides paths)
+
+    Returns:
+        WorkspaceAgent instance
+    """
+    if retriever is None:
+        retriever = FaissRetriever(
+            faiss_index_path=faiss_index_path, workspace_json_path=workspace_json_path
+        )
     return WorkspaceAgent(retriever)
