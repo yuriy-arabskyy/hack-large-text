@@ -1,8 +1,8 @@
 import dspy
 import os
 from dotenv import load_dotenv
-from models.rag_models import QueryUnderstanding, EvidenceSelection, AnswerSynthesis
-from retriever import MockRetriever
+from hack.models.rag_models import QueryUnderstanding, EvidenceSelection, AnswerSynthesis
+from hack.retriever import FaissRetriever
 
 load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -46,5 +46,15 @@ class WorkspaceAgent(dspy.Module):
         }
 
 
-retriever = MockRetriever()
-agent = WorkspaceAgent(retriever)
+# Initialize retriever with paths to FAISS index and workspace JSON
+# These paths assume the script is run from the project root
+def create_agent(
+    faiss_index_path: str = "experiments/chess_pdf.faiss",
+    workspace_json_path: str = "experiments/workspace_with_embeddings.json"
+):
+    """Create a WorkspaceAgent with FaissRetriever."""
+    retriever = FaissRetriever(
+        faiss_index_path=faiss_index_path,
+        workspace_json_path=workspace_json_path
+    )
+    return WorkspaceAgent(retriever)
