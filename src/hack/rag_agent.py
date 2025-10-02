@@ -9,12 +9,19 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 
 # --- Agent / Module ---
 class WorkspaceAgent(dspy.Module):
-    def __init__(self, retriever):
+    def __init__(self, retriever, lm):
         super().__init__()
-        self.retriever = retriever  # your DB / index backend
+        self.retriever = retriever
+        # Do NOT pass `lm` as a kwarg to Predict (treated as config in dspy 3.x)
         self.understand = dspy.Predict(QueryUnderstanding)
         self.select = dspy.Predict(EvidenceSelection)
         self.synthesize = dspy.Predict(AnswerSynthesis)
+
+        # Assign LM on the predictors explicitly (if provided)
+        if lm is not None:
+            self.understand.lm = lm
+            self.select.lm = lm
+            self.synthesize.lm = lm
 
     def forward(self, question: str):
         # 1. Query → retrieval plan
@@ -49,12 +56,12 @@ class WorkspaceAgent(dspy.Module):
 # Initialize retriever with paths to FAISS index and workspace JSON
 # These paths assume the script is run from the project root
 def create_agent(
-    faiss_index_path: str = "experiments/chess_pdf.faiss",
-    workspace_json_path: str = "experiments/workspace_with_embeddings.json"
+    faiss_index_path="experiments/chess_pdf.faiss",
+    workspace_json_path="experiments/workspace_with_embeddings.json",
+    lm=None
 ):
-    """Create a WorkspaceAgent with FaissRetriever."""
     retriever = FaissRetriever(
         faiss_index_path=faiss_index_path,
         workspace_json_path=workspace_json_path
     )
-    return WorkspaceAgent(retriever)
+    return WorkspaceAgent(retriever, lm=lm)
