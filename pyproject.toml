@@ -9,8 +9,10 @@ include = "hack"
 from = "src"
 
 [tool.poetry.dependencies]
-python = ">=3.12"
+python = ">=3.11"
 openai-agents = ">=0.3.3,<0.4.0"
+pymupdf = "^1.26.4"
+ipykernel = "^6.30.1"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
